@@ -1,0 +1,397 @@
+import jwt, { decode } from 'jsonwebtoken'
+import moment from 'moment';
+
+import { 
+    pool,
+    handleFinishedConnection,
+    cekRoleID
+} from '../util/db.js';
+
+import {
+    APIResponse,
+	throwErr
+} from '../util/defaultResponse.js';
+import { generateToken } from '../middleware/tokenHandler.js';
+import { ROLEID } from '../enums/roleID.js';
+
+import {
+    getUserAll,
+    getUserAllList,
+    getUserOutside,
+
+    getUser,
+    logSuccessLogin,
+    logCurrentTokenSign,
+    cekTokenValid,
+
+    cekUserSudahAda,
+    createUser,
+    changePassword,
+    resetPassword,
+    nonaktifkanUser,
+    
+    getUserSaldo,
+
+    cekPINSudahAda,
+    logPIN,
+
+
+    cekSalahPassword,
+    cekSalahPIN,
+    hashData,
+} from '../models/userModel.js';
+
+export const tes = async (req, res) => {
+    let connection;
+    let resp = '';
+    let commit = false;
+    res.send(APIResponse(true, null, resp));
+};
+// All User
+export const userAllController = async (req, res) => {
+    let connection;
+    let resp = '';
+    let commit = false;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        resp = await getUserAll(connection);
+
+        commit = true;
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    } finally {
+        handleFinishedConnection(connection, commit);
+    }
+    res.send(APIResponse(true, null, resp));
+};
+
+// All UserList
+export const userAllListController = async (req, res) => {
+    let connection;
+        let resp = '';
+        let commit = false;
+        try {
+            connection = await pool.getConnection();
+            await connection.beginTransaction();
+
+            await cekRoleID(connection, req.user, ROLEID.Admin);
+            
+            resp = await getUserAllList(connection, req.query);
+    
+            commit = true;
+        } catch (err) {
+            res.send(throwErr(err));
+            return;
+        } finally {
+            handleFinishedConnection(connection, commit);
+        }
+        res.send(APIResponse(true, null, resp));
+};
+
+// UserDetail
+export const userDetailController = async (req, res) => {
+    let connection;
+    let resp = '';
+    let commit = false;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        resp = await getUserOutside(connection, req.query.UserName);
+
+        commit = true;
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    } finally {
+        handleFinishedConnection(connection, commit);
+    }
+    res.send(APIResponse(true, null, resp));
+};
+
+// Login User
+export const userLoginController = async (req, res) => {
+    let connection;
+    let resp = '';
+    let user;
+    let commit = false;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        const reqBody = req.body;
+        
+        const respUser = await getUser(connection, reqBody.UserName);
+        user = respUser[0];
+
+        const msg = await cekSalahPassword(connection, user, hashData(reqBody.Password, reqBody.UserName))
+        if (msg != null) {
+            commit = true;
+            throw new Error(msg);
+        }
+        
+        resp = generateToken(user);
+        await logSuccessLogin(connection, user, resp);
+
+        commit = true;
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    } finally {
+        handleFinishedConnection(connection, commit);
+    }
+    res.send(APIResponse(true, 'Login Berhasil!!!', {
+        'Name': user.Name,
+        'UserName': user.UserName,
+        'RoleID': user.RoleID,
+        'Saldo': user.NominalNum,
+        ...resp
+    }));
+};
+// Refresh Token
+export const userRefreshToken = async (req, res) => {
+	const reqBody = req.body;
+    const refreshToken = reqBody.refreshToken;
+
+    let connection;
+    let resp = '';
+    let commit = false;
+	try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+    
+        const user = await new Promise((resolve, reject) => {
+            jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decodedUser) => {
+                if (err) {
+                    return reject(new Error('Invalid refresh token relog!!!'));
+                }
+    
+                const expired = decode(refreshToken).exp * 1000;
+                const momen = moment().valueOf();
+    
+                if (expired < momen) {
+                    return reject(new Error('RefreshToken dah expired relog!!!'));
+                }
+    
+                resolve(decodedUser);
+            });
+        });
+    
+        const oldAccessToken = req.headers['authorization'];
+        await cekTokenValid(connection, oldAccessToken, user.UserName);
+    
+        resp = generateToken(user);
+        await logCurrentTokenSign(connection, user.UserName, resp.accessToken);
+
+        commit = true;
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    } finally {
+        handleFinishedConnection(connection, commit);
+    }
+    res.send(APIResponse(true, null, resp));
+};
+
+// Create User
+export const userCreateController = async (req, res) => {
+    let connection;
+    let resp = '';
+    let commit = false;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        const reqBody = req.body;
+
+        await cekRoleID(connection, req.user, ROLEID.Admin);
+
+        const userSudahAda = await cekUserSudahAda(connection, reqBody.UserName);
+        if (userSudahAda != 0) {
+            throw new Error('UserName sudah ada silahkan pilih UserName lain!!!');
+        }
+
+        await createUser(connection, reqBody, req.user);
+
+        commit = true;
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    } finally {
+        handleFinishedConnection(connection, commit);
+    }
+    res.send(APIResponse(true, 'Create User Berhasil!!!', null));
+};
+// Change Password
+export const userChangePasswordController = async (req, res) => {
+    let connection;
+    let resp = '';
+    let commit = false;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        const reqBody = req.body;
+
+        const respUser = await getUser(connection, req.user.UserName);
+        const user = respUser[0];
+
+        const msg = await cekSalahPassword(connection, user, hashData(reqBody.OldPassword, user.UserName))
+        if (msg != null) {
+            commit = true;
+            throw new Error(msg);
+        }
+        
+        await changePassword(connection, reqBody, req.user);
+
+        commit = true;
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    } finally {
+        handleFinishedConnection(connection, commit);
+    }
+    res.send(APIResponse(true, 'Change Password Berhasil!!!', null));
+};
+// Reset Password
+export const userResetPasswordController = async (req, res) => {
+    let connection;
+    let resp = '';
+    let commit = false;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        const reqBody = req.body;
+        
+        await cekRoleID(connection, req.user, ROLEID.Admin);
+
+        await getUser(connection, reqBody.UserName);
+
+        resp = await resetPassword(connection, reqBody, req.user);
+
+        commit = true;
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    } finally {
+        handleFinishedConnection(connection, commit);
+    }
+    res.send(APIResponse(true, 'Reset Password Berhasil!!!', {
+        'newPassword': resp
+    }));
+};
+
+// Reset Password
+export const nonaktifkanUserController = async (req, res) => {
+    let connection;
+    let resp = '';
+    let commit = false;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        const reqBody = req.body;
+        
+        await cekRoleID(connection, req.user, ROLEID.Admin);
+
+        resp = await nonaktifkanUser(connection, reqBody);
+
+        commit = true;
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    } finally {
+        handleFinishedConnection(connection, commit);
+    }
+    res.send(APIResponse(true, 'Nonaktifkan user berhasil!!!', null));
+};
+
+
+// Saldo User
+export const userSaldoController = async (req, res) => {
+    let connection;
+    let resp = '';
+    let commit = false;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        const respSaldo = await getUserSaldo(connection, req.user);
+        resp = respSaldo[0];
+
+        commit = true;
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    } finally {
+        handleFinishedConnection(connection, commit);
+    }
+    res.send(APIResponse(true, null, {
+        'Saldo': resp.NominalNum
+    }));
+};
+
+// Bikin PIN
+export const userCreatePINController = async (req, res) => {
+    let connection;
+    let resp = '';
+    let commit = false;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        const reqBody = req.body;
+
+        const PINSudahAda = await cekPINSudahAda(connection, req.user);
+        if (PINSudahAda != 0) {
+            throw new Error('PIN sudah ada!!!');
+        }
+
+        resp = await logPIN(connection, reqBody.PIN, req.user);
+
+        commit = true;
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    } finally {
+        handleFinishedConnection(connection, commit);
+    }
+    res.send(APIResponse(true, 'Create PIN berhasil!!!', null));
+};
+// Ganti PIN
+export const userChangePINController = async (req, res) => {
+    let connection;
+    let resp = '';
+    let user;
+    let commit = false;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        const reqBody = req.body;
+
+        const respUser = await getUser(connection, req.user.UserName);
+        const user = respUser[0];
+
+        const msg = await cekSalahPIN(connection, user, hashData(reqBody.OldPIN, user.UserName));
+        if (msg != null) {
+            commit = true;
+            throw new Error(msg);
+        }
+
+        await logPIN(connection, reqBody.NewPIN, user);
+
+        commit = true;
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    } finally {
+        handleFinishedConnection(connection, commit);
+    }
+    res.send(APIResponse(true, 'Change PIN berhasil!!!', null));
+};
+
