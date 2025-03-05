@@ -22,8 +22,11 @@ import {
     
 	userLoginController,
     userRefreshToken,
+    userNameHashController,
+    userPhotoController,
 	
     userCreateController,
+    userChangePhotoController,
     userChangePasswordController,
     userResetPasswordController,
     nonaktifkanUserController,
@@ -55,8 +58,17 @@ router.route('/login')
 router.route('/refreshToken')
     .post(validateRefreshToken, userRefreshToken);
 
+router.route('/usernameHash')
+    .get(authToken, userNameHashController);
+
+router.route('/Photo')
+    .get(authToken, userPhotoController);
+
 router.route('/createUser')
     .post(validateCreateUser, userCreateController);
+
+router.route('/ChangePhoto')
+    .post(authToken, userChangePhotoController);
 
 router.route('/ChangePassword')
     .post(validateChangePassword, userChangePasswordController);

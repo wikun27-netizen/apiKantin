@@ -252,7 +252,6 @@ export const getTransaksi = async (connection, query, RoleID, UserName) => {
 
     s += vbcrlf + setupOffset(query.start, query.limit);
     
-    console.log(s);
     const data = tambahRowNo(
         parseReturnMySQL(await connection.query(s, param)),
         parseFloat(query.start)
@@ -435,7 +434,7 @@ export const postExporTransaksi = async (connection, query) => {
     const totalNominal = parseReturnMySQL(await connection.query(s, param))[0]['Nominal'];
   
     return export_to_excel(data, totalNominal, tipeTrx);
-  };
+}
   
   function export_to_excel(dt0, totalNominal, tipeTrx) {
     const wb = XLSX.utils.book_new();
@@ -489,4 +488,4 @@ export const postExporTransaksi = async (connection, query) => {
     XLSX.utils.book_append_sheet(wb, ws, 'Transaksi Bulanan');
 
     return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-  }
+}

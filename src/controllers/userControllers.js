@@ -1,5 +1,12 @@
 import jwt, { decode } from 'jsonwebtoken'
 import moment from 'moment';
+import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
+
+dotenv.config();
+
+const PHOTO_PATH = process.env.PHOTO_PATH;
 
 import { 
     pool,
@@ -195,6 +202,59 @@ export const userRefreshToken = async (req, res) => {
     }
     res.send(APIResponse(true, null, resp));
 };
+// UserNameHash
+export const userNameHashController = async (req, res) => {
+    let connection;
+    let resp = '';
+    let user;
+    let commit = false;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        const respUser = await getUser(connection, req.user.UserName);
+        user = respUser[0];
+
+        resp = {
+            userNamehash: user.idHash
+        };
+
+        commit = true;
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    } finally {
+        handleFinishedConnection(connection, commit);
+    }
+    res.send(APIResponse(true, null, 
+        resp
+    ));
+};
+// User Photo
+export const userPhotoController = async (req, res) => {
+    let resp;
+    try {
+        const filePath = path.join(PHOTO_PATH, req.user.UserName + '.png');
+        fs.readFile(filePath, (err, data) => {
+            if (err) {
+                // return res.status(404).json({ error: filePath + "...File not found" });
+                return res.status(404).json({ error: "...File not found" });
+            }
+    
+            const base64Image = Buffer.from(data).toString("base64");
+            const mimeType = "image/jpeg";
+    
+            resp = { image: `data:${mimeType};base64,${base64Image}` };
+            res.send(APIResponse(true, null, 
+                resp
+            ));
+        });
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    }
+};
+
 
 // Create User
 export const userCreateController = async (req, res) => {
@@ -224,6 +284,34 @@ export const userCreateController = async (req, res) => {
         handleFinishedConnection(connection, commit);
     }
     res.send(APIResponse(true, 'Create User Berhasil!!!', null));
+};
+// Change Photo
+export const userChangePhotoController = async (req, res) => {
+    try {
+        const Photo = req.body.Photo;
+
+        if (!Photo) {
+            return res.status(400).json({ error: "Foto tidak ada" });
+        }
+
+        const matches = Photo.match(/^data:(.+);base64,(.+)$/);
+        if (!matches || matches.length !== 3) {
+            return res.status(400).json({ error: "Format tidak valid" });
+        }
+
+        const base64Data = matches[2];
+        const filePath = path.join(PHOTO_PATH, req.user.UserName + '.png');
+        fs.writeFile(filePath, base64Data, { encoding: "base64" }, (err) => {
+            if (err) {
+                return res.status(500).json({ error: "Gagal simpan foto" });
+            }
+            res.send(APIResponse(true, 'Ubah Photo Berhasil!!!', null));
+        });
+
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    }
 };
 // Change Password
 export const userChangePasswordController = async (req, res) => {

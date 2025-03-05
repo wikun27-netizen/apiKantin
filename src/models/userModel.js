@@ -198,10 +198,11 @@ export const createUser = async (connection, body, user) => {
     
     let q1 = '';
     q1 += 'INSERT INTO User ';
-    q1 += '(Name, UserName, Password, RoleID, UserInput, IsAktif, created_at, updated_at, Failed_login, TokenSign, last_login) ';
+    q1 += '(idHash, Name, UserName, Password, RoleID, UserInput, IsAktif, created_at, updated_at, Failed_login, TokenSign, last_login) ';
     q1 += 'VALUES ';
-    q1 += '(?, ?, ?, ?, ?, 1, NOW(), NOW(), 0, \'\', NULL);';
+    q1 += '(?, ?, ?, ?, ?, ?, 1, NOW(), NOW(), 0, \'\', NULL);';
     const param1 = [
+        hash(body.UserName),
         body.Name, 
         body.UserName, 
         pass_hash, 
