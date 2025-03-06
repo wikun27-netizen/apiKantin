@@ -9,6 +9,9 @@ import {
     validateReqStatus,
     validateKonfirmasiReq,
     
+    validateReqPembayaran,
+    validateKonfirmasiReqPembayaran,
+    
     validateRiwayatUser,
 
     validateKosonginSaldo,
@@ -23,6 +26,9 @@ import {
     trxReqController,
     trxReqStatusController,
     trxKonfirmasiReqController,
+
+    trxReqPembayaranController,
+    trxKonfirmasiReqPembayaranController,
 
     trxRiwayatController,
     trxRiwayatUserController,
@@ -53,6 +59,14 @@ router.route('/reqStatus')
 
 router.route('/konfirmasiReq')
     .post(validateKonfirmasiReq, trxKonfirmasiReqController);
+
+
+router.route('/reqPembayaran')
+    .post(validateReqPembayaran, trxReqPembayaranController);
+
+router.route('/konfirmasiReqPembayaran')
+    .post(validateKonfirmasiReqPembayaran, trxKonfirmasiReqPembayaranController);
+
 
 router.route('/riwayat')
     .get(authToken, trxRiwayatController);

@@ -155,18 +155,7 @@ export const konfirmasiReqTransaksi = async (connection, body, user) => {
     const reqTransaksi = parseReturnMySQL(await connection.query(q2, param2), 
         'Transaksi tidak ditemukan!!!')[0];
 
-    let q3 = '';
-    q3 += 'SELECT Nominal ';
-    q3 += 'FROM Saldo ';
-    q3 += 'WHERE UserName = ? AND Nominal >= ?;';
-    
-    const param3 = [
-        user.UserName,
-        reqTransaksi.Nominal
-    ];
-    
-    parseReturnMySQL(await connection.query(q3, param3), 
-        'Saldo anda tidak mencukupi!!!');
+    await saldoMencukupi(connection, user.UserName, reqTransaksi.Nominal);
     
     const idTransaksi = await logTransfer(connection, reqTransaksi.Nominal, user.UserName, reqTransaksi.UserTujuan, reqTransaksi.idReq);
     
@@ -183,6 +172,21 @@ export const konfirmasiReqTransaksi = async (connection, body, user) => {
     await connection.query(q4, param4);
 }
 
+export const saldoMencukupi = async (connection, UserName, Nominal) => {
+    
+    let q = '';
+    q += 'SELECT Nominal ';
+    q += 'FROM Saldo ';
+    q += 'WHERE UserName = ? AND Nominal >= ?;';
+    
+    const param = [
+        UserName,
+        Nominal
+    ];
+    
+    parseReturnMySQL(await connection.query(q, param), 
+        'Saldo anda tidak mencukupi!!!');
+}
 
 
 export const getTransaksi = async (connection, query, RoleID, UserName) => {
@@ -195,6 +199,7 @@ export const getTransaksi = async (connection, query, RoleID, UserName) => {
     sSelect +=  'WHEN A.idReq = -1 THEN \'TopUp\'';
     sSelect +=  'WHEN A.idReq = -2 THEN \'Withdraw\'';
     sSelect +=  'WHEN A.idReq = -3 THEN \'TopUp Pribadi\'';
+    sSelect +=  'WHEN A.idReq = -4 THEN \'Pembayaran\'';
 	sSelect +=  'ELSE \'Transfer\'';
     sSelect += 'END TipeTransaksi';
     sSelect += vbcrlf + 'FROM Transaksi A ';
@@ -436,7 +441,7 @@ export const postExporTransaksi = async (connection, query) => {
     return export_to_excel(data, totalNominal, tipeTrx);
 }
   
-  function export_to_excel(dt0, totalNominal, tipeTrx) {
+function export_to_excel(dt0, totalNominal, tipeTrx) {
     const wb = XLSX.utils.book_new();
 
     var ws_data = [];

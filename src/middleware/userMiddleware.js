@@ -18,6 +18,19 @@ export const validateLogin = (req, res, next) => {
     return ''
 };
 
+export const validateTokenAndroid = (req, res, next) => {
+    try {
+        const reqBody = req.body;
+        
+        isPanjangStr('TokenAndroid', reqBody.TokenAndroid, 1, 255);
+        
+        authToken(req, res, next); //next() nya di authToken();
+    } catch (err) {
+        res.send(throwErr(err))
+    }
+    return ''
+};
+
 export const validateRefreshToken = (req, res, next) => {
     try {
         const reqBody = req.body;

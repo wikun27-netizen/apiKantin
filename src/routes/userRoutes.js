@@ -3,6 +3,7 @@ import express from 'express';
 import { 
     validateCreateUser,
     validateLogin,
+    validateTokenAndroid,
     validateRefreshToken,
 
     validateChangePassword,
@@ -21,6 +22,7 @@ import {
     userDetailController,
     
 	userLoginController,
+    userTokenAndroidController,
     userRefreshToken,
     userNameHashController,
     userPhotoController,
@@ -54,6 +56,9 @@ router.route('/detail')
 
 router.route('/login')
     .post(validateLogin, userLoginController);
+
+router.route('/tokenAndroid')
+    .post(validateTokenAndroid, userTokenAndroidController);
 
 router.route('/refreshToken')
     .post(validateRefreshToken, userRefreshToken);

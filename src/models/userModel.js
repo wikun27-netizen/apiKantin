@@ -90,12 +90,25 @@ export const getUserAllList = async (connection, query) => {
 };
 
 
+export const postUserTokenAndroid = async (connection, TokenAndroid, UserName) => {
+    let q = '';
+    q += 'UPDATE User ';
+    q += 'SET TokenAndroid = ? ';
+    q += 'WHERE UserName = ?;';
+    const param = [
+        TokenAndroid,
+        UserName
+    ];
+    
+    await connection.execute(q, param);
+};
+
 export const getUser = async (connection, UserName) => {
     let q = '';
     q += 'SELECT *, FORMAT(B.Nominal, 2) NominalNum ';
     q += 'FROM User A ';
     q += 'LEFT JOIN Saldo B ON A.UserName = B.UserName ';
-    q += 'WHERE A.UserName = ? AND IsAktif = 1;';
+    q += 'WHERE A.UserName = ? AND A.IsAktif = 1;';
     const param = [
         UserName
     ];
@@ -111,6 +124,18 @@ export const getUserOutside = async (connection, UserName) => {
     q += 'WHERE A.UserName = ?;';
     const param = [
         UserName
+    ];
+    
+    return parseReturnMySQL(await connection.execute(q, param), 'User tidak ditemukkan!!!');
+};
+
+export const getUserByIdhash = async (connection, idHash) => {
+    let q = '';
+    q += 'SELECT Name, UserName ';
+    q += 'FROM User ';
+    q += 'WHERE idHash = ? AND IsAktif = 1;';
+    const param = [
+        idHash
     ];
     
     return parseReturnMySQL(await connection.execute(q, param), 'User tidak ditemukkan!!!');

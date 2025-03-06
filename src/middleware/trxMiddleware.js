@@ -86,6 +86,34 @@ export const validateKonfirmasiReq = (req, res, next) => {
     return ''
 };
 
+export const validateReqPembayaran = (req, res, next) => {
+    try {
+        const reqBody = req.body;
+        
+        isPanjangStr('idHash', reqBody.idHash, 64, 255);
+        
+        authToken(req, res, next);
+    } catch (err) {
+        res.send(throwErr(err))
+    }
+    return ''
+};
+
+export const validateKonfirmasiReqPembayaran = (req, res, next) => {
+    try {
+        const reqBody = req.body;
+        
+        isPanjangStr('idHash', reqBody.idHash, 64, 255);
+        isMoney('Nominal', reqBody.Nominal);
+        isPanjangStr('PIN', reqBody.PIN, 6, 6);
+        
+        authToken(req, res, next);
+    } catch (err) {
+        res.send(throwErr(err))
+    }
+    return ''
+};
+
 export const validateRiwayatUser = (req, res, next) => {
     try {
         const reqQuery = req.query;

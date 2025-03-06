@@ -46,6 +46,7 @@ import {
     cekSalahPassword,
     cekSalahPIN,
     hashData,
+    postUserTokenAndroid,
 } from '../models/userModel.js';
 
 export const tes = async (req, res) => {
@@ -157,6 +158,29 @@ export const userLoginController = async (req, res) => {
         'Saldo': user.NominalNum,
         ...resp
     }));
+};
+// Update TokenAndroid User
+export const userTokenAndroidController = async (req, res) => {
+    let connection;
+    let resp = '';
+    let user;
+    let commit = false;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        const reqBody = req.body;
+        
+        await postUserTokenAndroid(connection, reqBody.TokenAndroid, req.user.UserName);
+        
+        commit = true;
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    } finally {
+        handleFinishedConnection(connection, commit);
+    }
+    res.send(APIResponse(true, 'Update Token Berhasil!!!', null));
 };
 // Refresh Token
 export const userRefreshToken = async (req, res) => {

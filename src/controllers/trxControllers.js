@@ -16,14 +16,16 @@ import {
     getUser,
     cekSalahPIN,
     hashData,
-    getUserSaldo
+    getUserSaldo,
+    getUserByIdhash
 } from '../models/userModel.js';
 import {
     logTransfer,
     logReqTransaksi,
     getReqStatus,
     konfirmasiReqTransaksi,
-    
+    saldoMencukupi,
+
     getTransaksi,
     getTransaksiUser,
     
@@ -193,6 +195,71 @@ export const trxKonfirmasiReqController = async (req, res) => {
     }
     res.send(APIResponse(true, 'Pembayaran berhasil!!!', null));
 };
+
+
+export const trxReqPembayaranController = async (req, res) => {
+    let connection;
+    let resp = '';
+    let commit = false;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        const reqBody = req.body;
+
+        await cekRoleID(connection, req.user, ROLEID.Pembeli);
+
+        const respUserTujuan = await getUserByIdhash(connection, reqBody.idHash);
+        resp = respUserTujuan[0];
+
+        commit = true;
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    } finally {
+        handleFinishedConnection(connection, commit);
+    }
+    res.send(APIResponse(true, null, resp));
+};
+
+export const trxKonfirmasiReqPembayaranController = async (req, res) => {
+    let connection;
+    let resp = '';
+    let commit = false;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        const reqBody = req.body;
+
+        await cekRoleID(connection, req.user, ROLEID.Pembeli);
+
+        const respUser = await getUser(connection, req.user.UserName);
+        const user = respUser[0];
+
+        const msg = await cekSalahPIN(user, hashData(reqBody.PIN, user.UserName));
+        if (msg != null) {
+            commit = true;
+            throw new Error(msg);
+        }
+
+        await saldoMencukupi(connection, user.UserName, reqBody.Nominal);
+
+        const respUserTujuan = await getUserByIdhash(connection, reqBody.idHash);
+        const userTujuan = respUserTujuan[0];
+        
+        await logTransfer(connection, reqBody.Nominal, user.UserName, userTujuan.UserName, -4);
+
+        commit = true;
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    } finally {
+        handleFinishedConnection(connection, commit);
+    }
+    res.send(APIResponse(true, 'Pembayaran berhasil!!!', null));
+};
+
 
 export const trxRiwayatController = async (req, res) => {
     let connection;
