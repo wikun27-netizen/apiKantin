@@ -18,29 +18,35 @@ import {
   addCell, 
   XLSXSTYLE
 } from '../util/xslxStyle.js';
+import { GoogleAuth } from 'google-auth-library';
+import axios from 'axios';
 
 export const logTransfer = async (connection, Nominal, userAsal, userTujuan, idReq) => {
     let q1 = '';
-    q1 += 'SELECT Nominal ';
-    q1 += 'FROM Saldo ';
-    q1 += 'WHERE UserName = ? ';
+    q1 += 'SELECT B.Nominal, A.TokenAndroid ';
+    q1 += 'FROM User A ';
+    q1 += 'LEFT JOIN Saldo B ON A.UserName = B.UserName ';
+    q1 += 'WHERE A.UserName = ? ';
     
     const param1 = [
         userAsal,
     ];
 //Ada handle muncul duit jadi saldoAwalUserAsal kasih 0 kalo ga dapet;
-    const saldoAwalUserAsal = parseReturnMySQL(await connection.query(q1, param1))[0]?.Nominal ?? 0;
+    const drUserAsal = parseReturnMySQL(await connection.query(q1, param1))[0] ?? {};
+    const saldoAwalUserAsal = drUserAsal.Nominal ?? 0;
     const saldoAkhirUserAsal = (parseFloat(saldoAwalUserAsal) - parseFloat(Nominal)).toFixed(4);
     let q2 = '';
-    q2 += 'SELECT Nominal ';
-    q2 += 'FROM Saldo ';
-    q2 += 'WHERE UserName = ? ';
+    q2 += 'SELECT B.Nominal, A.TokenAndroid ';
+    q2 += 'FROM User A ';
+    q2 += 'LEFT JOIN Saldo B ON A.UserName = B.UserName ';
+    q2 += 'WHERE A.UserName = ? ';
     
     const param2 = [
         userTujuan,
     ];
 
-    const saldoAwalUserTujuan = parseReturnMySQL(await connection.query(q2, param2))[0].Nominal;
+    const drUserTujuan = parseReturnMySQL(await connection.query(q2, param2))[0];
+    const saldoAwalUserTujuan = drUserTujuan.Nominal;
     const saldoAkhirUserTujuan = (parseFloat(saldoAwalUserTujuan) + parseFloat(Nominal)).toFixed(4);
 
     let q3 = '';
@@ -84,10 +90,60 @@ export const logTransfer = async (connection, Nominal, userAsal, userTujuan, idR
         userTujuan
     ]
 
-    await connection.query(q5, param5);
+    let q6 = '';
+    q6 += vbcrlf + 'SELECT * FROM ( '
+    q6 += vbcrlf + 'SELECT A.UserAsal, Asal.Name NamaUserAsal, A.UserTujuan, Tujuan.Name NamaUserTujuan, A.JumlahTransaksi, FORMAT(A.JumlahTransaksi, 2) Nominal, A.created_at, DATE_FORMAT(A.created_at, \'%Y-%m-%d %H:%i:%s\') WaktuTransaksi, CAST(A.idReq AS CHAR) idReq, ';
+    q6 += 'CASE ';
+    q6 +=  'WHEN A.idReq = -1 THEN \'TopUp\'';
+    q6 +=  'WHEN A.idReq = -2 THEN \'Withdraw\'';
+    q6 +=  'WHEN A.idReq = -3 THEN \'TopUp Pribadi\'';
+    q6 +=  'WHEN A.idReq = -4 THEN \'Pembayaran\'';
+	q6 +=  'ELSE \'Transfer\'';
+    q6 += 'END TipeTransaksi, \'1\' no';
+    q6 += vbcrlf + 'FROM Transaksi A ';
+    q6 += vbcrlf + 'LEFT JOIN User Asal ON A.UserAsal = Asal.UserName ';
+    q6 += vbcrlf + 'LEFT JOIN Saldo AsalSaldo ON A.UserAsal = AsalSaldo.UserName ';
+    q6 += vbcrlf + 'LEFT JOIN User Tujuan ON A.UserTujuan = Tujuan.UserName ';
+    q6 += vbcrlf + 'LEFT JOIN Saldo TujuanSaldo ON A.UserAsal = TujuanSaldo.UserName ';
+    q6 += vbcrlf + 'WHERE A.idTransaksi = ? ';
+    q6 += vbcrlf + ') a ';
+    q6 += vbcrlf + 'WHERE 1=1 ';
+
+    const param6 = [
+        idTransaksi
+    ]
+
+    const data = parseReturnMySQL(await connection.query(q6, param6))[0];
+    
+    if (drUserAsal != {}) {
+        if (drUserAsal.TokenAndroid != null) {
+            const bodyNotifUserAsal = {
+                token: drUserAsal.TokenAndroid,
+                notification: {
+                    title: 'Pengurangan saldo',
+                    body: 'Saldo anda telah berkurang sebanyak Rp.' + data.Nominal
+                },
+                data: data
+            }
+            await sendFCM(bodyNotifUserAsal);
+        }
+    }
+    if (drUserTujuan.TokenAndroid != null) {
+        const bodyNotifUserTujuan = {
+            token: drUserTujuan.TokenAndroid,
+            notification: {
+                title: 'Penambahan saldo',
+                body: 'Saldo anda telah bertambah sebanyak Rp.' + data.Nomial
+            },
+            data: data
+        }
+        
+        await sendFCM(bodyNotifUserTujuan);
+    }
 
     return idTransaksi;
 }
+
 export const logReqTransaksi = async (connection, body, user) => {
     
     let q = '';
@@ -494,3 +550,25 @@ function export_to_excel(dt0, totalNominal, tipeTrx) {
 
     return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
 }
+
+async function sendFCM(body) {
+    const auth = new GoogleAuth({
+      keyFile: 'serviceAccount.json',
+      scopes: ['https://www.googleapis.com/auth/firebase.messaging']
+    })
+  
+    const client = await auth.getClient()
+    const accessToken = await client.getAccessToken()
+  
+    const fcmUrl = 'https://fcm.googleapis.com/v1/projects/asamba-6282d/messages:send'
+    const message = {
+      message: body
+    }
+
+    const response = await axios.post(fcmUrl, message, {
+      headers: {
+        'Authorization': `Bearer ${accessToken.token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+  }

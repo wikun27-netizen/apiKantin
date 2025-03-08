@@ -182,6 +182,32 @@ export const userTokenAndroidController = async (req, res) => {
     }
     res.send(APIResponse(true, 'Update Token Berhasil!!!', null));
 };
+// User Has setup PIN
+export const userHasPINController = async (req, res) => {
+    let connection;
+    let user;
+    let commit = false;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        const respUser = await getUser(connection, req.user.UserName);
+        user = respUser[0];
+        console.log(user);
+        
+        if (user.PIN == null) {
+            throw new Error('User belum setup PIN!!!');
+        }
+        
+        commit = true;
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    } finally {
+        handleFinishedConnection(connection, commit);
+    }
+    res.send(APIResponse(true, 'User sudah setup PIN!!!', null));
+};
 // Refresh Token
 export const userRefreshToken = async (req, res) => {
 	const reqBody = req.body;

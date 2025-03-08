@@ -23,6 +23,7 @@ import {
     
 	userLoginController,
     userTokenAndroidController,
+    userHasPINController,
     userRefreshToken,
     userNameHashController,
     userPhotoController,
@@ -59,6 +60,9 @@ router.route('/login')
 
 router.route('/tokenAndroid')
     .post(validateTokenAndroid, userTokenAndroidController);
+
+router.route('/hasPIN')
+    .get(authToken, userHasPINController);
 
 router.route('/refreshToken')
     .post(validateRefreshToken, userRefreshToken);
