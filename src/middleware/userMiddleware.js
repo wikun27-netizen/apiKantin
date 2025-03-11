@@ -44,6 +44,19 @@ export const validateRefreshToken = (req, res, next) => {
     return ''
 };
 
+export const validatePhotoUser = (req, res, next) => {
+    try {
+        const reqQuery = req.query;
+        
+        isPanjangStr('UserName', reqQuery.UserName, 1, 255);
+        
+        authToken(req, res, next); //next() nya di authToken();
+    } catch (err) {
+        res.send(throwErr(err))
+    }
+    return ''
+};
+
 export const validateCreateUser = (req, res, next) => {
     try {
         const reqBody = req.body;

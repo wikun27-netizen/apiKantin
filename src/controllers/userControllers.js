@@ -193,7 +193,6 @@ export const userHasPINController = async (req, res) => {
         
         const respUser = await getUser(connection, req.user.UserName);
         user = respUser[0];
-        console.log(user);
         
         if (user.PIN == null) {
             throw new Error('User belum setup PIN!!!');
@@ -284,7 +283,7 @@ export const userNameHashController = async (req, res) => {
 export const userPhotoController = async (req, res) => {
     let resp;
     try {
-        const filePath = path.join(PHOTO_PATH, req.user.UserName + '.png');
+        const filePath = path.join(PHOTO_PATH, req.query.UserName + '.png');
         fs.readFile(filePath, (err, data) => {
             if (err) {
                 // return res.status(404).json({ error: filePath + "...File not found" });

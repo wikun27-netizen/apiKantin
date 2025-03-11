@@ -1,6 +1,7 @@
 import express from 'express';
 
 import { 
+    validatePhotoUser,
     validateCreateUser,
     validateLogin,
     validateTokenAndroid,
@@ -71,7 +72,7 @@ router.route('/usernameHash')
     .get(authToken, userNameHashController);
 
 router.route('/Photo')
-    .get(authToken, userPhotoController);
+    .get(validatePhotoUser, userPhotoController);
 
 router.route('/createUser')
     .post(validateCreateUser, userCreateController);
