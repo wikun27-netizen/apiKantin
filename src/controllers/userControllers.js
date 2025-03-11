@@ -19,7 +19,7 @@ import {
 	throwErr
 } from '../util/defaultResponse.js';
 import { generateToken } from '../middleware/tokenHandler.js';
-import { ROLEID } from '../enums/roleID.js';
+import { ROLE_ID, getRoleName } from '../enums/roleID.js';
 
 import {
     getUserAll,
@@ -85,7 +85,7 @@ export const userAllListController = async (req, res) => {
             connection = await pool.getConnection();
             await connection.beginTransaction();
 
-            await cekRoleID(connection, req.user, ROLEID.Admin);
+            await cekRoleID(connection, req.user, ROLE_ID.Admin);
             
             resp = await getUserAllList(connection, req.query);
     
@@ -155,6 +155,7 @@ export const userLoginController = async (req, res) => {
         'Name': user.Name,
         'UserName': user.UserName,
         'RoleID': user.RoleID,
+        'RoleName': getRoleName(user.RoleID),
         'Saldo': user.NominalNum,
         ...resp
     }));
@@ -332,7 +333,7 @@ export const userCreateController = async (req, res) => {
         
         const reqBody = req.body;
 
-        await cekRoleID(connection, req.user, ROLEID.Admin);
+        await cekRoleID(connection, req.user, ROLE_ID.Admin);
 
         const userSudahAda = await cekUserSudahAda(connection, reqBody.UserName);
         if (userSudahAda != 0) {
@@ -420,7 +421,7 @@ export const userResetPasswordController = async (req, res) => {
         
         const reqBody = req.body;
         
-        await cekRoleID(connection, req.user, ROLEID.Admin);
+        await cekRoleID(connection, req.user, ROLE_ID.Admin);
 
         await getUser(connection, reqBody.UserName);
 
@@ -449,7 +450,7 @@ export const nonaktifkanUserController = async (req, res) => {
         
         const reqBody = req.body;
         
-        await cekRoleID(connection, req.user, ROLEID.Admin);
+        await cekRoleID(connection, req.user, ROLE_ID.Admin);
 
         resp = await nonaktifkanUser(connection, reqBody);
 

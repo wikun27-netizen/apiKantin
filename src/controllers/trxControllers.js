@@ -10,7 +10,7 @@ import {
     APIResponse,
 	throwErr
 } from '../util/defaultResponse.js';
-import { ROLEID } from '../enums/roleID.js';
+import { ROLE_ID } from '../enums/roleID.js';
 
 import {
     getUser,
@@ -47,7 +47,7 @@ export const trxSetSaldoPribadiController = async (req, res) => {
 
         const reqBody = req.body;
         
-        await cekRoleID(connection, req.user, ROLEID.Admin);
+        await cekRoleID(connection, req.user, ROLE_ID.Admin);
 
         await logTransfer(connection, reqBody.valDiff, '0', req.user.UserName, TIPETRX.MunculDuit);
 
@@ -75,7 +75,7 @@ export const trxTopUpController = async (req, res) => {
 
         const reqBody = req.body;
         
-        await cekRoleID(connection, req.user, ROLEID.Admin);
+        await cekRoleID(connection, req.user, ROLE_ID.Admin);
 
         await logTransfer(connection, reqBody.Nominal, req.user.UserName, reqBody.User, TIPETRX.Topup);
 
@@ -98,7 +98,7 @@ export const trxWithdrawController = async (req, res) => {
 
         const reqBody = req.body;
         
-        await cekRoleID(connection, req.user, ROLEID.Admin);
+        await cekRoleID(connection, req.user, ROLE_ID.Admin);
 
         await logTransfer(connection, reqBody.Nominal, reqBody.User, req.user.UserName, TIPETRX.Withdraw);
 
@@ -122,7 +122,7 @@ export const trxReqController = async (req, res) => {
         
         const reqBody = req.body;
 
-        await cekRoleID(connection, req.user, ROLEID.Penjual);
+        await cekRoleID(connection, req.user, ROLE_ID.Penjual);
 
         const h_timestamp = await logReqTransaksi(connection, reqBody, req.user);
         resp = {
@@ -149,7 +149,7 @@ export const trxReqStatusController = async (req, res) => {
         
         const reqBody = req.body;
 
-        await cekRoleID(connection, req.user, ROLEID.Penjual);
+        await cekRoleID(connection, req.user, ROLE_ID.Penjual);
 
         resp = await getReqStatus(connection, reqBody);
 
@@ -173,7 +173,7 @@ export const trxKonfirmasiReqController = async (req, res) => {
         
         const reqBody = req.body;
 
-        await cekRoleID(connection, req.user, ROLEID.Pembeli);
+        await cekRoleID(connection, req.user, ROLE_ID.Pembeli);
 
         const respUser = await getUser(connection, req.user.UserName);
         const user = respUser[0];
@@ -207,7 +207,7 @@ export const trxReqPembayaranController = async (req, res) => {
         
         const reqBody = req.body;
 
-        await cekRoleID(connection, req.user, ROLEID.Pembeli);
+        await cekRoleID(connection, req.user, ROLE_ID.Pembeli);
 
         const respUserTujuan = await getUserByIdhash(connection, reqBody.idHash);
         resp = respUserTujuan[0];
@@ -232,7 +232,7 @@ export const trxKonfirmasiReqPembayaranController = async (req, res) => {
         
         const reqBody = req.body;
 
-        await cekRoleID(connection, req.user, ROLEID.Pembeli);
+        await cekRoleID(connection, req.user, ROLE_ID.Pembeli);
 
         const respUser = await getUser(connection, req.user.UserName);
         const user = respUser[0];
@@ -321,7 +321,7 @@ export const kosonginSaldoRoleController = async (req, res) => {
         
         const reqBody = req.body;
 
-        await cekRoleID(connection, req.user, ROLEID.Admin);
+        await cekRoleID(connection, req.user, ROLE_ID.Admin);
 
         await kosonginSaldoRole(connection, reqBody, req.user);
 
@@ -349,7 +349,7 @@ export const tambahinSaldoRoleController = async (req, res) => {
         
         const reqBody = req.body;
 
-        await cekRoleID(connection, req.user, ROLEID.Admin);
+        await cekRoleID(connection, req.user, ROLE_ID.Admin);
 
         await tambahinSaldoRole(connection, reqBody, req.user);
 

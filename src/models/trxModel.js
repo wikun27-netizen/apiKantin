@@ -13,7 +13,7 @@ import {
     setupOffset,
     tambahRowNo,
 } from '../util/db.js';
-import { ROLEID } from '../enums/roleID.js';
+import { ROLE_ID } from '../enums/roleID.js';
 import { 
   addCell, 
   XLSXSTYLE
@@ -281,7 +281,7 @@ export const getTransaksi = async (connection, query, RoleID, UserName) => {
 
     const userSearch = query.userSearch;
     if (userSearch == undefined) {
-        if (RoleID != ROLEID.Admin) {
+        if (RoleID != ROLE_ID.Admin) {
             sFilter += 'AND (UserAsal = ? OR UserTujuan = ?) ';
             param.push(UserName);
             param.push(UserName);
