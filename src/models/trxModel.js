@@ -89,6 +89,7 @@ export const logTransfer = async (connection, Nominal, userAsal, userTujuan, idR
         idTransaksi,
         userTujuan
     ]
+    await connection.query(q5, param5);
 
     let q6 = '';
     q6 += vbcrlf + 'SELECT * FROM ( '
