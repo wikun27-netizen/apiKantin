@@ -303,6 +303,22 @@ export const userPhotoController = async (req, res) => {
         return;
     }
 };
+// User Profile
+export const userProfileController = async (req, res) => {
+    let resp;
+    try {
+        const filePath = path.join(PHOTO_PATH, req.query.UserName + '.png');
+        fs.access(filePath, fs.constants.F_OK, (err) => {
+            if (err) {
+              return res.status(404).json({ error: '...File not found' });
+            }
+            res.sendFile(filePath);
+        });
+    } catch (err) {
+        res.send(throwErr(err));
+        return;
+    }
+};
 
 
 // Create User

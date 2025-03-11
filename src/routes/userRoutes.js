@@ -28,6 +28,7 @@ import {
     userRefreshToken,
     userNameHashController,
     userPhotoController,
+    userProfileController,
 	
     userCreateController,
     userChangePhotoController,
@@ -73,6 +74,9 @@ router.route('/usernameHash')
 
 router.route('/Photo')
     .get(validatePhotoUser, userPhotoController);
+
+router.route('/Profile')
+    .get(validatePhotoUser, userProfileController);
 
 router.route('/createUser')
     .post(validateCreateUser, userCreateController);
