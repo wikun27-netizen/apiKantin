@@ -178,7 +178,7 @@ export const trxKonfirmasiReqController = async (req, res) => {
         const respUser = await getUser(connection, req.user.UserName);
         const user = respUser[0];
 
-        const msg = await cekSalahPIN(user, hashData(reqBody.PIN, user.UserName));
+        const msg = await cekSalahPIN(connection, user, hashData(reqBody.PIN, user.UserName));
         if (msg != null) {
             commit = true;
             throw new Error(msg);
@@ -237,7 +237,7 @@ export const trxKonfirmasiReqPembayaranController = async (req, res) => {
         const respUser = await getUser(connection, req.user.UserName);
         const user = respUser[0];
 
-        const msg = await cekSalahPIN(user, hashData(reqBody.PIN, user.UserName));
+        const msg = await cekSalahPIN(connection, user, hashData(reqBody.PIN, user.UserName));
         if (msg != null) {
             commit = true;
             throw new Error(msg);
