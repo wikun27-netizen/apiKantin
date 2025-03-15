@@ -20,8 +20,8 @@ dotenv.config();
 export const getUserAll = async (connection) => {
     let q = '';
     q += 'SELECT A.Name, A.UserName, A.RoleID, B.Nominal ';
-    q += 'FROM User A ';
-    q += 'LEFT JOIN Saldo B ON A.UserName = B.UserName;'
+    q += 'FROM user A ';
+    q += 'LEFT JOIN saldo B ON A.UserName = B.UserName;'
     
     const responseGetUserAll = await connection.execute(q);
     
@@ -33,7 +33,7 @@ export const getUserAllList = async (connection, query) => {
     let s = ''
     let sSelect = '';
     sSelect += vbcrlf + 'SELECT * FROM ( '
-    sSelect += vbcrlf + 'SELECT A.Name NamaUser, A.UserName, FORMAT(B.Nominal, 2) Nominal, C.created_at last_transaction, DATE_FORMAT(C.created_at, \'%Y-%m-%d %H:%i:%s\') TransaksiTerakhir, c.IdTransaksi last_transaction_id, A.IsAktif, ';
+    sSelect += vbcrlf + 'SELECT A.Name NamaUser, A.UserName, FORMAT(B.Nominal, 2) Nominal, C.created_at last_transaction, DATE_FORMAT(C.created_at, \'%Y-%m-%d %H:%i:%s\') TransaksiTerakhir, C.idTransaksi last_transaction_id, A.IsAktif, ';
     sSelect += 'CASE ';
     sSelect +=  'WHEN A.RoleID = 1 THEN \'Penjual\'';
     sSelect +=  'WHEN A.RoleID = 2 THEN \'Pembeli\'';
@@ -92,7 +92,7 @@ export const getUserAllList = async (connection, query) => {
 
 export const postUserTokenAndroid = async (connection, TokenAndroid, UserName) => {
     let q = '';
-    q += 'UPDATE User ';
+    q += 'UPDATE user ';
     q += 'SET TokenAndroid = ? ';
     q += 'WHERE UserName = ?;';
     const param = [
@@ -106,8 +106,8 @@ export const postUserTokenAndroid = async (connection, TokenAndroid, UserName) =
 export const getUser = async (connection, UserName) => {
     let q = '';
     q += 'SELECT *, FORMAT(B.Nominal, 2) NominalNum ';
-    q += 'FROM User A ';
-    q += 'LEFT JOIN Saldo B ON A.UserName = B.UserName ';
+    q += 'FROM user A ';
+    q += 'LEFT JOIN saldo B ON A.UserName = B.UserName ';
     q += 'WHERE A.UserName = ? AND A.IsAktif = 1;';
     const param = [
         UserName
@@ -119,8 +119,8 @@ export const getUser = async (connection, UserName) => {
 export const getUserOutside = async (connection, UserName) => {
     let q = '';
     q += 'SELECT A.Name, A.UserName, FORMAT(B.Nominal, 2) NominalNum, IsAktif ';
-    q += 'FROM User A ';
-    q += 'LEFT JOIN Saldo B ON A.UserName = B.UserName ';
+    q += 'FROM user A ';
+    q += 'LEFT JOIN saldo B ON A.UserName = B.UserName ';
     q += 'WHERE A.UserName = ?;';
     const param = [
         UserName
@@ -132,7 +132,7 @@ export const getUserOutside = async (connection, UserName) => {
 export const getUserByIdhash = async (connection, idHash) => {
     let q = '';
     q += 'SELECT Name, UserName ';
-    q += 'FROM User ';
+    q += 'FROM user ';
     q += 'WHERE idHash = ? AND IsAktif = 1;';
     const param = [
         idHash
@@ -143,7 +143,7 @@ export const getUserByIdhash = async (connection, idHash) => {
 
 export const logFailedLogin = async (connection, user, FAILED_LOGIN_LIMIT) => {
     let q = '';
-    q += 'UPDATE User ';
+    q += 'UPDATE user ';
     q += 'SET Failed_login = ? ';
     q += 'WHERE id = ?;';
     const param = [
@@ -160,7 +160,7 @@ export const logFailedLogin = async (connection, user, FAILED_LOGIN_LIMIT) => {
 
 export const logSuccessLogin = async (connection, user, resp) => {
     let q = '';
-    q += 'UPDATE User ';
+    q += 'UPDATE user ';
     q += 'SET Failed_login = 0, Last_Login = ? ';
     q += 'WHERE id = ?;';
     const param = [
@@ -177,7 +177,7 @@ export const logCurrentTokenSign = async (connection, UserName, accessToken) => 
     const TokenSign = accessToken.split('.')[2];
 
     let q = '';
-    q += 'UPDATE User ';
+    q += 'UPDATE user ';
     q += 'SET TokenSign = ? ';
     q += 'WHERE UserName = ?;';
     const param = [
@@ -193,7 +193,7 @@ export const cekTokenValid = async (connection, accessToken, UserName) => {
 
     let q = '';
     q += 'SELECT * ';
-    q += 'FROM User ';
+    q += 'FROM user ';
     q += 'WHERE TokenSign = ? AND UserName = ?;';
     const param = [
         TokenSign, 
@@ -208,7 +208,7 @@ export const cekTokenValid = async (connection, accessToken, UserName) => {
 export const cekUserSudahAda = async (connection, UserName) => {
     let q = '';
     q += 'SELECT * ';
-    q += 'FROM User ';
+    q += 'FROM user ';
     q += 'WHERE UserName = ?;';
     const param = [
         UserName
@@ -222,7 +222,7 @@ export const createUser = async (connection, body, user) => {
     const pass_hash = hash(body.Password + body.UserName.toLowerCase());
     
     let q1 = '';
-    q1 += 'INSERT INTO User ';
+    q1 += 'INSERT INTO user ';
     q1 += '(idHash, Name, UserName, Password, RoleID, UserInput, IsAktif, created_at, updated_at, Failed_login, TokenSign, last_login) ';
     q1 += 'VALUES ';
     q1 += '(?, ?, ?, ?, ?, ?, 1, NOW(), NOW(), 0, \'\', NULL);';
@@ -238,7 +238,7 @@ export const createUser = async (connection, body, user) => {
     await connection.query(q1, param1);
     
     let q2 = '';
-    q2 += 'INSERT INTO Saldo ';
+    q2 += 'INSERT INTO saldo ';
     q2 += '(UserName, Nominal, lastIdTransaksi) ';
     q2 += 'VALUES ';
     q2 += '(?, 0, 0);';
@@ -253,7 +253,7 @@ export const changePassword = async (connection, body, user) => {
     const pass_hash = hash(body.NewPassword + user.UserName.toLowerCase());
     
     let q = '';
-    q += 'UPDATE User ';
+    q += 'UPDATE user ';
     q += 'SET Password = ? ';
     q += 'WHERE UserName = ?;';
     const param = [
@@ -269,7 +269,7 @@ export const resetPassword = async (connection, body, user) => {
     const pass_hash = hash(pass_plain + body.UserName.toLowerCase());
     
     let q = '';
-    q += 'UPDATE User ';
+    q += 'UPDATE user ';
     q += 'SET Password = ?, Failed_login = 0, Failed_PIN = 0, PIN = NULL ';
     q += 'WHERE UserName = ?;';
     const param = [
@@ -284,7 +284,7 @@ export const resetPassword = async (connection, body, user) => {
 export const nonaktifkanUser = async (connection, body) => {
     
     let q = '';
-    q += 'UPDATE User ';
+    q += 'UPDATE user ';
     q += 'SET IsAktif = 0, updated_at = NOW() ';
     q += 'WHERE UserName = ?;';
     const param = [
@@ -298,7 +298,7 @@ export const nonaktifkanUser = async (connection, body) => {
 export const getUserSaldo = async (connection, user) => {
     let q = '';
     q += 'SELECT Format(Nominal, 2) NominalNum ';
-    q += 'FROM Saldo ';
+    q += 'FROM saldo ';
     q += 'WHERE UserName = ?;';
     const param = [
         user.UserName
@@ -312,7 +312,7 @@ export const getUserSaldo = async (connection, user) => {
 export const cekPINSudahAda = async (connection, user) => {
     let q = '';
     q += 'SELECT * ';
-    q += 'FROM User ';
+    q += 'FROM user ';
     q += 'WHERE UserName = ? AND PIN IS NOT NULL;';
     const param = [
         user.UserName
@@ -326,7 +326,7 @@ export const logPIN = async (connection, PIN, user) => {
     const pin_hash = hash(PIN + user.UserName.toLowerCase());
     
     let q = '';
-    q += 'UPDATE User ';
+    q += 'UPDATE user ';
     q += 'SET PIN = ?, updated_at = NOW(), Failed_PIN = 0 ';
     q += 'WHERE UserName = ?';
     const param = [
@@ -339,7 +339,7 @@ export const logPIN = async (connection, PIN, user) => {
 
 export const logFailedPIN = async (connection, user, FAILED_PIN_LIMIT) => {
     let q = '';
-    q += 'UPDATE User ';
+    q += 'UPDATE user ';
     q += 'SET Failed_PIN = ? ';
     q += 'WHERE id = ?';
     const param = [

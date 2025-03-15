@@ -33,7 +33,7 @@ export const vbcrlf = '\n'
 export const cekRoleID = async (connection, user, RoleID) => {
     let q = '';
     q += 'SELECT * ';
-    q += 'FROM User ';
+    q += 'FROM user ';
     q += 'WHERE UserName = ? AND RoleID = ?;';
     const param = [
         user.UserName,

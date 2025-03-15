@@ -24,8 +24,8 @@ import axios from 'axios';
 export const logTransfer = async (connection, Nominal, userAsal, userTujuan, idReq) => {
     let q1 = '';
     q1 += 'SELECT B.Nominal, A.TokenAndroid ';
-    q1 += 'FROM User A ';
-    q1 += 'LEFT JOIN Saldo B ON A.UserName = B.UserName ';
+    q1 += 'FROM user A ';
+    q1 += 'LEFT JOIN saldo B ON A.UserName = B.UserName ';
     q1 += 'WHERE A.UserName = ? ';
     
     const param1 = [
@@ -37,8 +37,8 @@ export const logTransfer = async (connection, Nominal, userAsal, userTujuan, idR
     const saldoAkhirUserAsal = (parseFloat(saldoAwalUserAsal) - parseFloat(Nominal)).toFixed(4);
     let q2 = '';
     q2 += 'SELECT B.Nominal, A.TokenAndroid ';
-    q2 += 'FROM User A ';
-    q2 += 'LEFT JOIN Saldo B ON A.UserName = B.UserName ';
+    q2 += 'FROM user A ';
+    q2 += 'LEFT JOIN saldo B ON A.UserName = B.UserName ';
     q2 += 'WHERE A.UserName = ? ';
     
     const param2 = [
@@ -50,7 +50,7 @@ export const logTransfer = async (connection, Nominal, userAsal, userTujuan, idR
     const saldoAkhirUserTujuan = (parseFloat(saldoAwalUserTujuan) + parseFloat(Nominal)).toFixed(4);
 
     let q3 = '';
-    q3 += 'INSERT Transaksi ';
+    q3 += 'INSERT transaksi ';
     q3 += '(UserAsal, SaldoAkhirUserAsal, JumlahTransaksi, UserTujuan, SaldoAkhirUserTujuan, IdReq, created_at) ';
     q3 += 'VALUES ';
     q3 += '(?, ?, ?, ?, ?, ?, NOW());';
@@ -67,7 +67,7 @@ export const logTransfer = async (connection, Nominal, userAsal, userTujuan, idR
     const idTransaksi = parseReturnMySQL(await connection.query(q3, param3)).insertId;
 
     let q4 = '';
-    q4 += 'UPDATE Saldo ';
+    q4 += 'UPDATE saldo ';
     q4 += 'SET Nominal = ?, lastIdTransaksi = ? ';
     q4 += 'WHERE UserName = ?;';
 
@@ -80,7 +80,7 @@ export const logTransfer = async (connection, Nominal, userAsal, userTujuan, idR
     await connection.query(q4, param4);
     
     let q5 = '';
-    q5 += 'UPDATE Saldo ';
+    q5 += 'UPDATE saldo ';
     q5 += 'SET Nominal = ?, lastIdTransaksi = ? ';
     q5 += 'WHERE UserName = ?;';
 
@@ -101,11 +101,11 @@ export const logTransfer = async (connection, Nominal, userAsal, userTujuan, idR
     q6 +=  'WHEN A.idReq = -4 THEN \'Pembayaran\'';
 	q6 +=  'ELSE \'Transfer\'';
     q6 += 'END TipeTransaksi, \'1\' no';
-    q6 += vbcrlf + 'FROM Transaksi A ';
-    q6 += vbcrlf + 'LEFT JOIN User Asal ON A.UserAsal = Asal.UserName ';
-    q6 += vbcrlf + 'LEFT JOIN Saldo AsalSaldo ON A.UserAsal = AsalSaldo.UserName ';
-    q6 += vbcrlf + 'LEFT JOIN User Tujuan ON A.UserTujuan = Tujuan.UserName ';
-    q6 += vbcrlf + 'LEFT JOIN Saldo TujuanSaldo ON A.UserAsal = TujuanSaldo.UserName ';
+    q6 += vbcrlf + 'FROM transaksi A ';
+    q6 += vbcrlf + 'LEFT JOIN user Asal ON A.UserAsal = Asal.UserName ';
+    q6 += vbcrlf + 'LEFT JOIN saldo AsalSaldo ON A.UserAsal = AsalSaldo.UserName ';
+    q6 += vbcrlf + 'LEFT JOIN user Tujuan ON A.UserTujuan = Tujuan.UserName ';
+    q6 += vbcrlf + 'LEFT JOIN saldo TujuanSaldo ON A.UserAsal = TujuanSaldo.UserName ';
     q6 += vbcrlf + 'WHERE A.idTransaksi = ? ';
     q6 += vbcrlf + ') a ';
     q6 += vbcrlf + 'WHERE 1=1 ';
@@ -148,7 +148,7 @@ export const logTransfer = async (connection, Nominal, userAsal, userTujuan, idR
 export const logReqTransaksi = async (connection, body, user) => {
     
     let q = '';
-    q += 'INSERT ReqTransaksi ';
+    q += 'INSERT reqtransaksi ';
     q += '(H_Timestamp, UserTujuan, Nominal, idTransaksi, created_at) ';
     q += 'VALUES ';
     q += '(?, ?, ?, NULL, NOW());';
@@ -169,7 +169,7 @@ export const getReqStatus = async (connection, body) => {
     
     let q = '';
     q += 'SELECT * ';
-    q += 'FROM ReqTransaksi ';
+    q += 'FROM reqtransaksi ';
     q += 'WHERE H_Timestamp = ? AND idTransaksi IS NOT NULL;';
 
     const param = [
@@ -189,7 +189,7 @@ export const konfirmasiReqTransaksi = async (connection, body, user) => {
     
     let q1 = '';
     q1 += 'SELECT * ';
-    q1 += 'FROM User ';
+    q1 += 'FROM user ';
     q1 += 'WHERE UserName = ? AND PIN = ?;';
 
     const param1 = [
@@ -202,14 +202,14 @@ export const konfirmasiReqTransaksi = async (connection, body, user) => {
 
     let q2 = '';
     q2 += 'SELECT idReq, Nominal, UserTujuan ';
-    q2 += 'FROM reqTransaksi ';
+    q2 += 'FROM reqtransaksi ';
     q2 += 'WHERE H_Timestamp = ? AND idTransaksi IS NULL;';
 
     const param2 = [
         body.h_timestamp
     ];
 
-    const reqTransaksi = parseReturnMySQL(await connection.query(q2, param2), 
+    const reqtransaksi = parseReturnMySQL(await connection.query(q2, param2), 
         'Transaksi tidak ditemukan!!!')[0];
 
     await saldoMencukupi(connection, user.UserName, reqTransaksi.Nominal);
@@ -217,7 +217,7 @@ export const konfirmasiReqTransaksi = async (connection, body, user) => {
     const idTransaksi = await logTransfer(connection, reqTransaksi.Nominal, user.UserName, reqTransaksi.UserTujuan, reqTransaksi.idReq);
     
     let q4 = '';
-    q4 += 'UPDATE reqTransaksi ';
+    q4 += 'UPDATE reqtransaksi ';
     q4 += 'SET idTransaksi = ? ';
     q4 += 'WHERE H_Timestamp = ? AND idTransaksi IS NULL;';
     
@@ -233,7 +233,7 @@ export const saldoMencukupi = async (connection, UserName, Nominal) => {
     
     let q = '';
     q += 'SELECT Nominal ';
-    q += 'FROM Saldo ';
+    q += 'FROM saldo ';
     q += 'WHERE UserName = ? AND Nominal >= ?;';
     
     const param = [
@@ -259,11 +259,11 @@ export const getTransaksi = async (connection, query, RoleID, UserName) => {
     sSelect +=  'WHEN A.idReq = -4 THEN \'Pembayaran\'';
 	sSelect +=  'ELSE \'Transfer\'';
     sSelect += 'END TipeTransaksi';
-    sSelect += vbcrlf + 'FROM Transaksi A ';
-    sSelect += vbcrlf + 'LEFT JOIN User Asal ON A.UserAsal = Asal.UserName ';
-    sSelect += vbcrlf + 'LEFT JOIN Saldo AsalSaldo ON A.UserAsal = AsalSaldo.UserName ';
-    sSelect += vbcrlf + 'LEFT JOIN User Tujuan ON A.UserTujuan = Tujuan.UserName ';
-    sSelect += vbcrlf + 'LEFT JOIN Saldo TujuanSaldo ON A.UserAsal = TujuanSaldo.UserName ';
+    sSelect += vbcrlf + 'FROM transaksi A ';
+    sSelect += vbcrlf + 'LEFT JOIN user Asal ON A.UserAsal = Asal.UserName ';
+    sSelect += vbcrlf + 'LEFT JOIN saldo AsalSaldo ON A.UserAsal = AsalSaldo.UserName ';
+    sSelect += vbcrlf + 'LEFT JOIN user Tujuan ON A.UserTujuan = Tujuan.UserName ';
+    sSelect += vbcrlf + 'LEFT JOIN saldo TujuanSaldo ON A.UserAsal = TujuanSaldo.UserName ';
     sSelect += vbcrlf + ') a ';
     sSelect += vbcrlf + 'WHERE 1=1 ';
     s += sSelect;
@@ -341,7 +341,7 @@ export const getTransaksiUser = async (connection, query, UserName) => {
     const param = [];
 
     sSelect += vbcrlf + 'SELECT * FROM ( '
-    sSelect += vbcrlf + 'SELECT A.User, Asal.Name NamaUserAsal, FORMAT(A.SaldoAkhirUser, 2) SaldoAkhirUser, A.UserLawan, Tujuan.Name NamaUserLawan, FORMAT(A.JumlahTransaksi, 2) Nominal, A.created_at, DATE_FORMAT(A.created_at, \'%Y-%m-%d %H:%i:%s\') WaktuTransaksi, A.idReq, A.TipeTrx, ';
+    sSelect += vbcrlf + 'SELECT A.user, Asal.Name NamaUserAsal, FORMAT(A.SaldoAkhirUser, 2) SaldoAkhirUser, A.UserLawan, Tujuan.Name NamaUserLawan, FORMAT(A.JumlahTransaksi, 2) Nominal, A.created_at, DATE_FORMAT(A.created_at, \'%Y-%m-%d %H:%i:%s\') WaktuTransaksi, A.idReq, A.TipeTrx, ';
     sSelect += 'CASE ';
     sSelect +=  'WHEN A.TipeTrx = -1 THEN \'Uang Masuk\'';
     sSelect +=  'WHEN A.TIpeTrx = -2 THEN \'Uang Keluar\'';
@@ -354,12 +354,12 @@ export const getTransaksiUser = async (connection, query, UserName) => {
     sSelect += 'SELECT A2.UserAsal user, A2.SaldoAkhirUserAsal SaldoAkhirUser, A2.UserTujuan UserLawan, A2.JumlahTransaksi, A2.created_at, A2.idReq, -2 TipeTrx ';
     sSelect += 'FROM transaksi A2 ';
     sSelect += ') A ';
-    sSelect += vbcrlf + 'LEFT JOIN User Asal ON A.User = Asal.UserName ';
-    sSelect += vbcrlf + 'LEFT JOIN Saldo AsalSaldo ON A.User = AsalSaldo.UserName ';
-    sSelect += vbcrlf + 'LEFT JOIN User Tujuan ON A.UserLawan = Tujuan.UserName ';
-    sSelect += vbcrlf + 'LEFT JOIN Saldo TujuanSaldo ON A.UserLawan = TujuanSaldo.UserName ';
+    sSelect += vbcrlf + 'LEFT JOIN user Asal ON A.user = Asal.UserName ';
+    sSelect += vbcrlf + 'LEFT JOIN saldo AsalSaldo ON A.user = AsalSaldo.UserName ';
+    sSelect += vbcrlf + 'LEFT JOIN user Tujuan ON A.UserLawan = Tujuan.UserName ';
+    sSelect += vbcrlf + 'LEFT JOIN saldo TujuanSaldo ON A.UserLawan = TujuanSaldo.UserName ';
     sSelect += vbcrlf + ') a ';
-    sSelect += vbcrlf + 'WHERE 1=1 AND A.User = ? ';
+    sSelect += vbcrlf + 'WHERE 1=1 AND a.user = ? ';
     s += sSelect;
     param.push(UserName);
 
@@ -443,11 +443,11 @@ export const postExporTransaksi = async (connection, query) => {
     sSelect +=  'WHEN A.idReq = -3 THEN \'TopUp Pribadi\'';
     sSelect +=  'ELSE \'Transfer\'';
     sSelect += 'END TipeTransaksi';
-    sSelect += vbcrlf + 'FROM Transaksi A ';
-    sSelect += vbcrlf + 'LEFT JOIN User Asal ON A.UserAsal = Asal.UserName ';
-    sSelect += vbcrlf + 'LEFT JOIN Saldo AsalSaldo ON A.UserAsal = AsalSaldo.UserName ';
-    sSelect += vbcrlf + 'LEFT JOIN User Tujuan ON A.UserTujuan = Tujuan.UserName ';
-    sSelect += vbcrlf + 'LEFT JOIN Saldo TujuanSaldo ON A.UserAsal = TujuanSaldo.UserName ';
+    sSelect += vbcrlf + 'FROM transaksi A ';
+    sSelect += vbcrlf + 'LEFT JOIN user Asal ON A.UserAsal = Asal.UserName ';
+    sSelect += vbcrlf + 'LEFT JOIN saldo AsalSaldo ON A.UserAsal = AsalSaldo.UserName ';
+    sSelect += vbcrlf + 'LEFT JOIN user Tujuan ON A.UserTujuan = Tujuan.UserName ';
+    sSelect += vbcrlf + 'LEFT JOIN saldo TujuanSaldo ON A.UserAsal = TujuanSaldo.UserName ';
     sSelect += vbcrlf + ') a ';
     sSelect += vbcrlf + 'WHERE 1=1 ';
     s += sSelect;
