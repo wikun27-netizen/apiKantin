@@ -134,7 +134,7 @@ export const logTransfer = async (connection, Nominal, userAsal, userTujuan, idR
             token: drUserTujuan.TokenAndroid,
             notification: {
                 title: 'Penambahan saldo',
-                body: 'Saldo anda telah bertambah sebanyak Rp.' + data.Nomial
+                body: 'Saldo anda telah bertambah sebanyak Rp.' + data.Nominal
             },
             data: data
         }
