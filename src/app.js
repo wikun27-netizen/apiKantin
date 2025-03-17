@@ -8,7 +8,7 @@ import trxRoutes from './routes/trxRoutes.js';
 const app = express();
 
 const corsOptions = {
-    origin: ['http://localhost:5173'],
+    origin: ['http://localhost:5173', 'https://asambacoin.com'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   };

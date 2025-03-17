@@ -473,14 +473,20 @@ export const postExporTransaksi = async (connection, query) => {
         sFilter += 'AND created_at <= ?';
         param.push(query.TanggalAkhir);
     }
+    
+    if (query.user != undefined) {
+        sFilter += 'AND (UserAsal = ? OR UserTujuan = ?)';
+        param.push(query.user);
+        param.push(query.user);
+    }
     s += sFilter;
 
     let sSort = 'ORDER BY '
     if (query.sortCol != undefined && query.sortCol != '' &&
     query.sortDir != undefined && query.sortDir != '') {
-    sSort += query.sortCol + ' ' + query.sortDir + ' '
+        sSort += query.sortCol + ' ' + query.sortDir + ' '
     } else {
-    sSort += 'created_at DESC '
+        sSort += 'created_at DESC '
     }
     s += sSort
 
@@ -495,19 +501,29 @@ export const postExporTransaksi = async (connection, query) => {
 
     const totalNominal = parseReturnMySQL(await connection.query(s, param))[0]['Nominal'];
   
-    return export_to_excel(data, totalNominal, tipeTrx);
+    return export_to_excel(data, totalNominal, tipeTrx, query.user);
 }
   
-function export_to_excel(dt0, totalNominal, tipeTrx) {
+function export_to_excel(dt0, totalNominal, tipeTrx, user) {
     const wb = XLSX.utils.book_new();
 
     var ws_data = [];
 
     let row = [];
-    row = addCell(row, XLSXSTYLE.BoldS10, 'Transaksi Bulanan');
-    ws_data.push(row); row = []; // 1
-    row = addCell(row, XLSXSTYLE.BoldS10Center, 'Tipe Transaksi: ' + tipeTrx);
-    ws_data.push(row); row = []; // 2
+    if (user) {
+        row = addCell(row, XLSXSTYLE.BoldS10, 'Transaksi User [' + user + ']');
+        ws_data.push(row); row = []; // 1
+    } else {
+        row = addCell(row, XLSXSTYLE.BoldS10, 'Transaksi Bulanan');
+        ws_data.push(row); row = []; // 1
+    } 
+    if (tipeTrx) {
+        row = addCell(row, XLSXSTYLE.BoldS10Center, 'Tipe Transaksi: ' + tipeTrx);
+        ws_data.push(row); row = []; // 2
+    } else {
+        row = addCell(row, XLSXSTYLE.BoldS10Center, 'Tipe Transaksi: Semua');
+        ws_data.push(row); row = []; // 2
+    }
     row = addCell(row, XLSXSTYLE.BoldS10Center, 'Total : Rp.' + totalNominal);
     ws_data.push(row); row = []; // 3
 
@@ -572,4 +588,4 @@ async function sendFCM(body) {
         'Content-Type': 'application/json'
       }
     })
-  }
+}
