@@ -27,6 +27,7 @@ export const logTransfer = async (connection, Nominal, userAsal, userTujuan, idR
     q1 += 'FROM user A ';
     q1 += 'LEFT JOIN saldo B ON A.UserName = B.UserName ';
     q1 += 'WHERE A.UserName = ? ';
+    q1 += 'FOR UPDATE';
     
     const param1 = [
         userAsal,
@@ -40,6 +41,7 @@ export const logTransfer = async (connection, Nominal, userAsal, userTujuan, idR
     q2 += 'FROM user A ';
     q2 += 'LEFT JOIN saldo B ON A.UserName = B.UserName ';
     q2 += 'WHERE A.UserName = ? ';
+    q2 += 'FOR UPDATE';
     
     const param2 = [
         userTujuan,
@@ -344,7 +346,7 @@ export const getTransaksiUser = async (connection, query, UserName) => {
     sSelect += vbcrlf + 'SELECT A.user, Asal.Name NamaUserAsal, FORMAT(A.SaldoAkhirUser, 2) SaldoAkhirUser, A.UserLawan, Tujuan.Name NamaUserLawan, FORMAT(A.JumlahTransaksi, 2) Nominal, A.created_at, DATE_FORMAT(A.created_at, \'%Y-%m-%d %H:%i:%s\') WaktuTransaksi, A.idReq, A.TipeTrx, ';
     sSelect += 'CASE ';
     sSelect +=  'WHEN A.TipeTrx = -1 THEN \'Uang Masuk\'';
-    sSelect +=  'WHEN A.TIpeTrx = -2 THEN \'Uang Keluar\'';
+    sSelect +=  'WHEN A.TipeTrx = -2 THEN \'Uang Keluar\'';
 	sSelect +=  'ELSE \'--\'';
     sSelect += 'END TipeTransaksi';
     sSelect += vbcrlf + 'FROM ( ';
@@ -582,10 +584,14 @@ async function sendFCM(body) {
       message: body
     }
 
-    const response = await axios.post(fcmUrl, message, {
-      headers: {
-        'Authorization': `Bearer ${accessToken.token}`,
-        'Content-Type': 'application/json'
-      }
-    })
+    try {
+        await axios.post(fcmUrl, message, {
+          headers: {
+            'Authorization': `Bearer ${accessToken.token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+    } catch (error) {
+        console.log('kena aneh gara2 slek ganti konsol/?');
+    }
 }
