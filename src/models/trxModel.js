@@ -20,6 +20,7 @@ import {
 } from '../util/xslxStyle.js';
 import { GoogleAuth } from 'google-auth-library';
 import axios from 'axios';
+import fs from 'fs';
 
 export const logTransfer = async (connection, Nominal, userAsal, userTujuan, idReq) => {
     let q1 = '';
@@ -571,20 +572,20 @@ function export_to_excel(dt0, totalNominal, tipeTrx, user) {
 }
 
 async function sendFCM(body) {
-    const auth = new GoogleAuth({
-      keyFile: 'serviceAccount.json',
-      scopes: ['https://www.googleapis.com/auth/firebase.messaging']
-    })
-  
-    const client = await auth.getClient()
-    const accessToken = await client.getAccessToken()
-  
-    const fcmUrl = 'https://fcm.googleapis.com/v1/projects/asamba-6282d/messages:send'
-    const message = {
-      message: body
-    }
-
     try {
+        const auth = new GoogleAuth({
+        keyFile: 'serviceAccount.json',
+        scopes: ['https://www.googleapis.com/auth/firebase.messaging']
+        })
+    
+        const client = await auth.getClient()
+        const accessToken = await client.getAccessToken()
+    
+        const fcmUrl = 'https://fcm.googleapis.com/v1/projects/asamba-6282d/messages:send'
+        const message = {
+        message: body
+        }
+
         await axios.post(fcmUrl, message, {
           headers: {
             'Authorization': `Bearer ${accessToken.token}`,
@@ -592,6 +593,6 @@ async function sendFCM(body) {
           }
         });
     } catch (error) {
-        console.log('kena aneh gara2 slek ganti konsol/?');
+        fs.appendFileSync('fcm_error.log', `[${new Date().toISOString()}] ${error.stack || error}\n`);
     }
 }
