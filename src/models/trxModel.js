@@ -274,7 +274,7 @@ export const getTransaksi = async (connection, query, RoleID, UserName) => {
 
     let sFilter = ''
     sFilter += setupFilter(query.filter,
-      'AND (UserAsal LIKE @f OR UserNameAsal LIKE @f OR UserTujuan LIKE @f OR UserNameTujuan LIKE @f OR JumlahTransaksi LIKE @f) ');
+      'AND (UserAsal LIKE @f OR NamaUserAsal LIKE @f OR UserTujuan LIKE @f OR NamaUserTujuan LIKE @f OR JumlahTransaksi LIKE @f) ');
     
     const tipeTrx = query.tipeTrx;
     if (tipeTrx != undefined) {
