@@ -368,7 +368,7 @@ export const getTransaksiUser = async (connection, query, UserName) => {
 
     let sFilter = ''
     sFilter += setupFilter(query.filter,
-      'AND (User LIKE @f OR NamaUserAsal LIKE @f OR UserLawan LIKE @f OR NamaUserLawan LIKE @f OR JumlahTransaksi LIKE @f OR TipeTransaksi LIKE @f) ');
+      'AND (User LIKE @f OR NamaUserAsal LIKE @f OR UserLawan LIKE @f OR NamaUserLawan LIKE @f OR Nominal LIKE @f OR TipeTransaksi LIKE @f) ');
     
     if (query.TanggalAwal != null) {        
         sFilter += 'AND ? <= created_at ';
