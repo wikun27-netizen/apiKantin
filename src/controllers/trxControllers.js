@@ -34,6 +34,7 @@ import {
     postExporTransaksi
 } from '../models/trxModel.js';
 import { TIPETRX } from '../enums/tipeTrx.js';
+import { sendFCM } from '../util/sendFCM.js';
 
 dotenv.config();
 
@@ -227,30 +228,75 @@ export const trxKonfirmasiReqPembayaranController = async (req, res) => {
     let resp = '';
     let commit = false;
     try {
+
+        // const timer = () => {
+        //     const start = performance.now();
+        //     let last = start;
+        //     return (label) => {
+        //         const now = performance.now();
+        //         console.log(`[bayar] ${label}: +${(now - last).toFixed(0)}ms (total ${(now - start).toFixed(0)}ms)`);
+        //         last = now;
+        //     };
+        // };
+        // const t = timer();
         connection = await pool.getConnection();
         await connection.beginTransaction();
-        
+
         const reqBody = req.body;
+        const userName = req.user.UserName;
 
-        await cekRoleID(connection, req.user, ROLE_ID.Pembeli);
+        const pinHash = hashData(reqBody.PIN, userName);
+        // t('hashData');
 
-        const respUser = await getUser(connection, req.user.UserName);
-        const user = respUser[0];
+        await pool.query('SELECT 1');          // sementara, untuk ukur latensi ke DB
+        // t('ping SELECT 1');
 
-        const msg = await cekSalahPIN(connection, user, hashData(reqBody.PIN, user.UserName));
-        if (msg != null) {
-            commit = true;
-            throw new Error(msg);
-        }
+        const [result] = await pool.query(
+            'CALL proses_pembayaran(?, ?, ?, ?, ?, ?)',
+            [
+                userName,
+                ROLE_ID.Pembeli,
+                pinHash,
+                Number(process.env.FAILED_PIN_LIMIT),
+                reqBody.Nominal,
+                reqBody.idHash
+            ]
+        );
+        // t('CALL proses_pembayaran');
+        const { TokenAsal, TokenTujuan, ...data } = result[0][0];
 
-        await saldoMencukupi(connection, user.UserName, reqBody.Nominal);
-
-        const respUserTujuan = await getUserByIdhash(connection, reqBody.idHash);
-        const userTujuan = respUserTujuan[0];
-        
-        await logTransfer(connection, reqBody.Nominal, user.UserName, userTujuan.UserName, -4);
-
+        await connection.commit();   // commit dulu, baru kirim notifikasi
         commit = true;
+
+        const fcmData = Object.fromEntries(
+            Object.entries(data).map(([k, v]) => [k, v == null ? '' : String(v)])
+        );
+        // t('setup fcm');
+        const notifs = [];
+        if (TokenAsal) {
+            notifs.push(sendFCM({
+                token: TokenAsal,
+                notification: {
+                    title: 'Pengurangan saldo',
+                    body: 'Saldo anda telah berkurang sebanyak Rp.' + data.Nominal
+                },
+                data: fcmData
+            }));
+        }
+        if (TokenTujuan) {
+            notifs.push(sendFCM({
+                token: TokenTujuan,
+                notification: {
+                    title: 'Penambahan saldo',
+                    body: 'Saldo anda telah bertambah sebanyak Rp.' + data.Nominal
+                },
+                data: fcmData
+            }));
+        }
+        (await Promise.allSettled(notifs)).forEach(h => {
+            if (h.status === 'rejected') console.error('FCM gagal:', h.reason);
+        });
+        // t('sendFCM');
     } catch (err) {
         res.send(throwErr(err));
         return;

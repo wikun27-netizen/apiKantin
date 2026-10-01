@@ -570,29 +570,3 @@ function export_to_excel(dt0, totalNominal, tipeTrx, user) {
 
     return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
 }
-
-async function sendFCM(body) {
-    try {
-        const auth = new GoogleAuth({
-        keyFile: 'serviceAccount.json',
-        scopes: ['https://www.googleapis.com/auth/firebase.messaging']
-        })
-    
-        const client = await auth.getClient()
-        const accessToken = await client.getAccessToken()
-    
-        const fcmUrl = 'https://fcm.googleapis.com/v1/projects/asamba-6282d/messages:send'
-        const message = {
-        message: body
-        }
-
-        await axios.post(fcmUrl, message, {
-          headers: {
-            'Authorization': `Bearer ${accessToken.token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-    } catch (error) {
-        fs.appendFileSync('fcm_error.log', `[${new Date().toISOString()}] ${error.stack || error}\n`);
-    }
-}
