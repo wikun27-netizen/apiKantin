@@ -18,9 +18,7 @@ import {
   addCell, 
   XLSXSTYLE
 } from '../util/xslxStyle.js';
-import { GoogleAuth } from 'google-auth-library';
-import axios from 'axios';
-import fs from 'fs';
+import { sendFCM } from '../util/sendFCM.js';
 
 export const logTransfer = async (connection, Nominal, userAsal, userTujuan, idReq) => {
     let q1 = '';
